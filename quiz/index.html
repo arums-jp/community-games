@@ -647,7 +647,7 @@
 
         // 行データを問題オブジェクトに変換
         const questions = [];
-        rows.forEach(function(row) {
+        normalizeRows(rows).forEach(function(row) {
           // A列（問題番号）が空またはB列（問題文）が空の行はスキップ
           if (!row[1]) return;
 

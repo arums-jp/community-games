@@ -700,7 +700,7 @@
       }
 
       var sheetName = CONFIG.CROSSWORD_SHEET || 'クロスワード';
-      var range = encodeURIComponent(sheetName + '!A2:C1000');
+      var range = encodeURIComponent(sheetName + '!A2:D1000');
       var url = 'https://sheets.googleapis.com/v4/spreadsheets/' +
         CONFIG.SPREADSHEET_ID + '/values/' + range + '?key=' + CONFIG.API_KEY;
 
@@ -722,10 +722,11 @@
         }
 
         puzzles = [];
-        rows.forEach(function(row) {
-          var yoko = String(row[0] || '').trim();
-          var tate = String(row[1] || '').trim();
-          var hint = String(row[2] || '').trim();
+        normalizeRows(rows).forEach(function(row) {
+          // A:番号 B:横単語 C:縦単語 D:ヒント
+          var yoko = String(row[1] || '').trim();
+          var tate = String(row[2] || '').trim();
+          var hint = String(row[3] || '').trim();
           if (!yoko || !tate) return;
 
           // 共通文字を探す（最初に見つかった組み合わせを使用）

@@ -212,7 +212,7 @@
           return data;
         });
       }).then(function(data) {
-        var rows = data.values || [];
+        var rows = normalizeRows(data.values || []);
         rows.forEach(function(row) {
           var image = String(row[2] || '').trim();
           var correct = String(row[3] || '').trim();

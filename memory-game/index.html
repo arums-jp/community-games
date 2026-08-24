@@ -432,7 +432,7 @@
       }
 
       var sheetName = CONFIG.MEMORY_SHEET || '絵合わせ';
-      var range = encodeURIComponent(sheetName + '!A2:C1000');
+      var range = encodeURIComponent(sheetName + '!A2:D1000');
       var url = 'https://sheets.googleapis.com/v4/spreadsheets/' +
         CONFIG.SPREADSHEET_ID + '/values/' + range + '?key=' + CONFIG.API_KEY;
 
@@ -449,10 +449,11 @@
         var rows = json.values || [];
 
         CARDS = [];
-        rows.forEach(function(row, i) {
-          var label = String(row[0] || '').trim();
-          var imageRaw = String(row[1] || '').trim();
-          var emoji = String(row[2] || '').trim();
+        normalizeRows(rows).forEach(function(row, i) {
+          // A:番号 B:名前 C:画像URL D:絵文字
+          var label = String(row[1] || '').trim();
+          var imageRaw = String(row[2] || '').trim();
+          var emoji = String(row[3] || '').trim();
           if (!label) return;
           var imageUrl = imageRaw ? toDriveThumbUrl(imageRaw) : '';
           CARDS.push({ id: i + 1, label: label, image: imageUrl, emoji: emoji || '🃏' });

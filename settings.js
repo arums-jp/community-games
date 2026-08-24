@@ -67,3 +67,35 @@ async function loadSheetSettings() {
     // ネットワークエラー等 → 既定値のまま続行
   }
 }
+
+
+// =============================================
+// 列レイアウトの互換ヘルパ
+//
+// 全ゲームで A列=番号・B列以降=データ に統一したが、スプレッドシート側が
+// まだ旧レイアウト（A列からデータが始まる）のままの場合がある。
+// 1行目のA列が番号（数字）かどうかで判定し、旧レイアウトなら
+// 先頭に空セルを1つ足して新レイアウトと同じ位置に揃える。
+// =============================================
+
+/**
+ * 行の配列を、A列=番号 のレイアウトに正規化して返す。
+ * @param {Array<Array<string>>} rows シートの行（見出し行を除く）
+ * @return {Array<Array<string>>}
+ */
+function normalizeRows(rows) {
+  if (!rows || !rows.length) return rows || [];
+
+  // データ行のA列がすべて数字なら、すでに番号列がある＝新レイアウト
+  var hasNumberColumn = rows.some(function(row) {
+    return String((row && row[0]) || '').trim() !== '';
+  }) && rows.every(function(row) {
+    var a = String((row && row[0]) || '').trim();
+    return a === '' || /^[0-9]+$/.test(a);
+  });
+
+  if (hasNumberColumn) return rows;
+
+  // 旧レイアウト → 先頭に空セルを足して1つずらす
+  return rows.map(function(row) { return [''].concat(row || []); });
+}

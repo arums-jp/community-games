@@ -84,13 +84,14 @@
     function escapeHtml(str) { return typeof str === 'string' ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : ''; }
     function showError(title, detail) { document.getElementById('screen-loading').innerHTML = '<p class="error-title">⚠️ ' + escapeHtml(title) + '</p><div class="error-message">' + escapeHtml(detail) + '</div><button class="btn btn-secondary" onclick="location.reload()">再読み込み</button>'; showScreen('screen-loading'); }
     function fetchQuestions() {
-      var range = encodeURIComponent((CONFIG.WORD_ORDER_SHEET || '文字並べ替え') + '!A2:D1000');
+      var range = encodeURIComponent((CONFIG.WORD_ORDER_SHEET || '文字並べ替え') + '!A2:E1000');
       var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + CONFIG.SPREADSHEET_ID + '/values/' + range + '?key=' + CONFIG.API_KEY;
       fetch(url).then(function(response) { return response.json().then(function(data) { if (!response.ok) throw new Error((data.error && data.error.message) || response.statusText); return data; }); }).then(function(data) {
-        (data.values || []).forEach(function(row) {
+        normalizeRows(data.values || []).forEach(function(row) {
+          // A:番号 B:問題文 C:正解 D:解説
           var answer = String(row[2] || '').trim();
           if (!answer) return;
-          allQuestions.push({ question: String(row[0] || '').trim(), answer: answer, explanation: String(row[3] || '').trim(), letters: answer.split('') });
+          allQuestions.push({ number: String(row[0] || ''), question: String(row[1] || '').trim(), answer: answer, explanation: String(row[3] || '').trim(), letters: answer.split('') });
         });
         if (!allQuestions.length) throw new Error('問題データがありません。文字並べ替えシートの入力内容を確認してください。');
         document.getElementById('question-count').textContent = Math.min(allQuestions.length, CONFIG.WORD_ORDER_MAX_QUESTIONS || 10); showScreen('screen-start');

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>写真で名前当てクイズ</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', sans-serif;
+      background-color: #fdf6ee;
+      color: #4a3728;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 16px;
+    }
+    #app { width: 100%; max-width: 480px; min-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+    .card {
+      background-color: #fffaf4;
+      border-radius: 20px;
+      padding: 32px 24px;
+      box-shadow: 0 4px 16px rgba(180, 120, 60, 0.15);
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      min-height: 64px;
+      border: none;
+      border-radius: 16px;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 12px 16px;
+      line-height: 1.4;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { opacity: 0.85; transform: scale(0.98); }
+    .btn-primary { background-color: #e07b39; color: #fff; box-shadow: 0 4px 10px rgba(224, 123, 57, 0.35); }
+    .btn-secondary { background-color: #f2d9bc; color: #4a3728; box-shadow: 0 2px 6px rgba(180, 120, 60, 0.15); }
+    .screen { display: none; }
+    .screen.active { display: flex; }
+    #screen-loading, #screen-start, #screen-result { justify-content: center; align-items: center; text-align: center; }
+    .loading-spinner { width: 56px; height: 56px; border: 6px solid #f2d9bc; border-top-color: #e07b39; border-radius: 50%; animation: spin 0.9s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text, .game-subtitle, .progress-label { font-size: 18px; color: #8c6b4a; }
+    .game-title-wrapper { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .game-title-icon { font-size: 56px; }
+    .game-title, .result-title { font-size: 30px; font-weight: bold; color: #c96a28; }
+    .start-info, .question-box, .result-box { background-color: #fdf0e0; border-radius: 14px; padding: 20px; width: 100%; }
+    .start-info-text, .result-text { font-size: 20px; line-height: 1.8; }
+    .start-info-text strong { font-size: 28px; color: #e07b39; }
+    #screen-question { gap: 20px; }
+    .progress-label { text-align: right; }
+    .progress-bar-bg { width: 100%; height: 10px; background-color: #f2d9bc; border-radius: 99px; overflow: hidden; }
+    .progress-bar-fill { height: 100%; background-color: #e07b39; border-radius: 99px; transition: width 0.3s ease; }
+    .question-box { display: flex; flex-direction: column; gap: 14px; }
+    .question-text { font-size: 23px; line-height: 1.6; }
+    .visual-image {
+      display: block;
+      width: 100%;
+      height: 220px;
+      object-fit: contain;
+      border-radius: 12px;
+      background-color: #fff;
+    }
+    .visual-image.silhouette { filter: brightness(0); }
+    .image-note { font-size: 16px; color: #8c6b4a; text-align: center; }
+    .choices-list { display: flex; flex-direction: column; gap: 12px; }
+    .choice {
+      width: 100%;
+      min-height: 64px;
+      border: 2px solid #e0c4a0;
+      border-radius: 14px;
+      background-color: #fff;
+      color: #4a3728;
+      font-size: 20px;
+      padding: 14px 18px;
+      text-align: left;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .choice.correct { background-color: #d4edda; border-color: #4cae4c; color: #2d6a2d; font-weight: bold; }
+    .choice.wrong { background-color: #f8d7da; border-color: #d9534f; color: #842029; font-weight: bold; }
+    .choice:disabled { opacity: 1; cursor: default; }
+    .feedback { border-radius: 14px; padding: 16px; font-size: 21px; font-weight: bold; text-align: center; }
+    .feedback.correct { background-color: #d4edda; color: #2d6a2d; }
+    .feedback.wrong { background-color: #f8d7da; color: #842029; }
+    .result-icon { font-size: 64px; }
+    .result-score { font-size: 52px; font-weight: bold; color: #e07b39; }
+    .result-total { font-size: 26px; color: #8c6b4a; }
+    .achievement-panel { width: 100%; border: 4px solid #4cae4c; border-radius: 16px; background-color: #f1faef; padding: 20px; text-align: left; }
+    .achievement-title { color: #2d6a2d; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 12px; }
+    .achievement-text { color: #2d6a2d; font-size: 18px; line-height: 1.7; }
+    .achievement-date { font-weight: bold; font-size: 20px; }
+    [hidden] { display: none !important; }
+    .error-title { font-size: 22px; color: #c0392b; }
+    .error-message { font-size: 18px; line-height: 1.7; background-color: #fdf0e0; border-radius: 12px; padding: 16px; white-space: pre-wrap; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="screen-loading" class="screen card active">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">問題を読み込んでいます…</p>
+    </div>
+
+    <div id="screen-start" class="screen card">
+      <div class="game-title-wrapper">
+        <div class="game-title-icon">📷</div>
+        <h1 class="game-title">写真で名前当てクイズ</h1>
+        <p class="game-subtitle">写真やシルエットを見て答えよう！</p>
+      </div>
+      <div class="start-info">
+        <p class="start-info-text">全 <strong id="question-count">?</strong> 問です。<br>写真を見て、正式な名称を4つの選択肢から選んでください。</p>
+      </div>
+      <button class="btn btn-primary" id="start-btn">はじめる</button>
+      <button class="btn btn-secondary" onclick="goTop()">トップへもどる</button>
+    </div>
+
+    <div id="screen-question" class="screen card">
+      <p class="progress-label"><span id="current-num">1</span> 問目 ／ <span id="total-num">10</span> 問</p>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-bar"></div></div>
+      <div class="question-box">
+        <p class="question-text" id="question-text"></p>
+        <img class="visual-image" id="visual-image" alt="出題画像">
+        <p class="image-note" id="image-note"></p>
+      </div>
+      <div class="choices-list" id="choices-list"></div>
+      <div class="feedback" id="feedback" hidden></div>
+      <button class="btn btn-secondary" onclick="goTop()">トップへもどる</button>
+    </div>
+
+    <div id="screen-result" class="screen card">
+      <div class="result-icon" id="result-icon">🎉</div>
+      <p class="result-title" id="result-title">おつかれさまでした！</p>
+      <div class="result-box">
+        <p class="result-score"><span id="correct-count">0</span><span class="result-total"> ／ <span id="result-total">0</span> 問正解</span></p>
+        <p class="result-text" id="result-message"></p>
+      </div>
+      <div class="achievement-panel" id="achievement-panel" hidden>
+        <p class="achievement-title">景品チャレンジ達成！</p>
+        <p class="achievement-text" id="achievement-month"></p>
+        <p class="achievement-text">達成日時：<span class="achievement-date" id="achievement-date"></span></p>
+        <p class="achievement-text" id="achievement-guidance"></p>
+      </div>
+      <button class="btn btn-primary" id="restart-btn">もう一度あそぶ</button>
+      <button class="btn btn-secondary" onclick="goTop()">トップへもどる</button>
+    </div>
+  </div>
+
+  <script src="../config.js"></script>
+  <script src="../settings.js"></script>
+  <script>
+    var allQuestions = [];
+    var gameQuestions = [];
+    var currentIndex = 0;
+    var correctCount = 0;
+    var answerLocked = false;
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach(function(el) { el.classList.remove('active'); });
+      document.getElementById(id).classList.add('active');
+    }
+
+    function shuffleArray(arr) {
+      for (var i = arr.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+      }
+      return arr;
+    }
+
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    function toDriveThumbUrl(url) {
+      var fileMatch = url.match(/\/file\/d\/([^/?]+)/);
+      if (fileMatch) return 'https://drive.google.com/thumbnail?id=' + fileMatch[1] + '&sz=w800';
+      var queryMatch = url.match(/[?&]id=([^&]+)/);
+      if (queryMatch && url.indexOf('drive.google.com') !== -1) {
+        return 'https://drive.google.com/thumbnail?id=' + queryMatch[1] + '&sz=w800';
+      }
+      return url;
+    }
+
+    function showError(title, detail) {
+      var el = document.getElementById('screen-loading');
+      el.innerHTML = '<div class="error-title">⚠️ ' + escapeHtml(title) + '</div><div class="error-message">' + escapeHtml(detail) + '</div><button class="btn btn-secondary" onclick="location.reload()">再読み込み</button>';
+      showScreen('screen-loading');
+    }
+
+    function fetchQuestions() {
+      if (!CONFIG.SPREADSHEET_ID || !CONFIG.API_KEY) {
+        showError('設定が不足しています。', 'config.js のスプレッドシートIDとAPIキーを確認してください。');
+        return;
+      }
+      var range = encodeURIComponent((CONFIG.VISUAL_SHEET || '写真クイズ') + '!A2:I1000');
+      var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + CONFIG.SPREADSHEET_ID + '/values/' + range + '?key=' + CONFIG.API_KEY;
+      fetch(url).then(function(response) {
+        return response.json().then(function(data) {
+          if (!response.ok) throw new Error((data.error && data.error.message) || response.statusText);
+          return data;
+        });
+      }).then(function(data) {
+        var rows = data.values || [];
+        rows.forEach(function(row) {
+          var image = String(row[2] || '').trim();
+          var correct = String(row[3] || '').trim();
+          var choices = [correct, row[4], row[5], row[6]].map(function(value) { return String(value || '').trim(); });
+          if (!image || !correct || choices.some(function(choice) { return !choice; })) return;
+          allQuestions.push({ number: String(row[0] || ''), question: String(row[1] || '').trim(), image: toDriveThumbUrl(image), correct: correct, choices: choices, explanation: String(row[7] || '').trim(), type: String(row[8] || '').trim() });
+        });
+        if (!allQuestions.length) throw new Error('問題データがありません。A列〜I列の入力内容を確認してください。');
+        document.getElementById('question-count').textContent = Math.min(allQuestions.length, CONFIG.VISUAL_MAX_QUESTIONS || 10);
+        showScreen('screen-start');
+      }).catch(function(error) {
+        showError('データの読み込みに失敗しました。', error.message);
+      });
+    }
+
+    function startGame() {
+      currentIndex = 0;
+      correctCount = 0;
+      gameQuestions = shuffleArray(allQuestions.slice()).slice(0, CONFIG.VISUAL_MAX_QUESTIONS || 10);
+      showQuestion();
+    }
+
+    function showQuestion() {
+      var question = gameQuestions[currentIndex];
+      answerLocked = false;
+      document.getElementById('current-num').textContent = currentIndex + 1;
+      document.getElementById('total-num').textContent = gameQuestions.length;
+      document.getElementById('progress-bar').style.width = (currentIndex / gameQuestions.length) * 100 + '%';
+      document.getElementById('question-text').textContent = question.question || 'この写真の正式な名称はどれでしょう？';
+      var image = document.getElementById('visual-image');
+      image.src = question.image;
+      image.classList.toggle('silhouette', question.type === 'シルエット');
+      image.alt = question.type === 'シルエット' ? 'シルエット画像' : '出題画像';
+      document.getElementById('image-note').textContent = question.type === 'シルエット' ? 'シルエットを見て答えてください' : '写真を見て答えてください';
+      var list = document.getElementById('choices-list');
+      list.innerHTML = '';
+      shuffleArray(question.choices.slice()).forEach(function(choice) {
+        var button = document.createElement('button');
+        button.className = 'choice';
+        button.textContent = choice;
+        button.addEventListener('click', function() { answerQuestion(button, choice, question); });
+        list.appendChild(button);
+      });
+      document.getElementById('feedback').hidden = true;
+      showScreen('screen-question');
+    }
+
+    function answerQuestion(button, selected, question) {
+      if (answerLocked) return;
+      answerLocked = true;
+      var isCorrect = selected === question.correct;
+      if (isCorrect) correctCount++;
+      document.querySelectorAll('.choice').forEach(function(choice) {
+        choice.disabled = true;
+        if (choice.textContent === question.correct) choice.classList.add('correct');
+        if (choice === button && !isCorrect) choice.classList.add('wrong');
+      });
+      var feedback = document.getElementById('feedback');
+      feedback.hidden = false;
+      feedback.className = 'feedback ' + (isCorrect ? 'correct' : 'wrong');
+      feedback.textContent = isCorrect ? '⭕ 正解！' : '❌ 正解は「' + question.correct + '」です';
+      if (question.explanation) feedback.textContent += ' ' + question.explanation;
+      setTimeout(function() {
+        currentIndex++;
+        if (currentIndex >= gameQuestions.length) showResult();
+        else showQuestion();
+      }, 900);
+    }
+
+    function showResult() {
+      var total = gameQuestions.length;
+      var ratio = total ? correctCount / total : 0;
+      document.getElementById('correct-count').textContent = correctCount;
+      document.getElementById('result-total').textContent = total;
+      document.getElementById('result-icon').textContent = ratio === 1 ? '🏆' : '🎉';
+      document.getElementById('result-title').textContent = ratio === 1 ? '全問正解！' : 'おつかれさまでした！';
+      document.getElementById('result-message').textContent = ratio === 1 ? 'すばらしいです！' : 'もう一度チャレンジしてみてください。';
+      var achieved = Number.isFinite(Number(CONFIG.ACHIEVEMENT_MIN_SCORE)) && ratio >= Number(CONFIG.ACHIEVEMENT_MIN_SCORE);
+      document.getElementById('achievement-panel').hidden = !achieved;
+      if (achieved) {
+        document.getElementById('achievement-month').textContent = CONFIG.MONTH_LABEL || '今月のチャレンジ';
+        document.getElementById('achievement-date').textContent = new Intl.DateTimeFormat('ja-JP', { dateStyle: 'full', timeStyle: 'short' }).format(new Date());
+        document.getElementById('achievement-guidance').textContent = CONFIG.PRIZE_GUIDANCE || 'この画面を職員にお見せください。';
+      }
+      showScreen('screen-result');
+    }
+
+    function goTop() { window.location.href = '../'; }
+    document.getElementById('start-btn').addEventListener('click', startGame);
+    document.getElementById('restart-btn').addEventListener('click', startGame);
+    loadSheetSettings().then(fetchQuestions);
+  </script>
+</body>
+</html>

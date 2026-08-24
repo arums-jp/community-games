@@ -5,19 +5,23 @@
 // 設定を書いておくと、各ゲームが起動時にその値を読み込む。
 // 設定シートが無い・値が空・数値でない場合は config.js の既定値を使う。
 //
+// このシートは index.html が読む ACTIVE_GAME と同じシート（CONFIG.CONTROL_SHEET）。
+//
 //   A列（設定名）        B列（値）
 //   クイズ出題数          10
 //   クロスワード出題数     10
 //   絵合わせペア数         8      ← 6 / 8 / 10 / 12 のいずれか
+//   写真クイズ出題数       10
+//   文字並べ替え出題数     10
 // =============================================
-
-const SETTINGS_SHEET_NAME = '設定';
 
 // 設定名 → CONFIG のキー名
 const SETTINGS_KEY_MAP = {
   'クイズ出題数':        'MAX_QUESTIONS',
   'クロスワード出題数':   'CROSSWORD_MAX_QUESTIONS',
   '絵合わせペア数':      'MEMORY_PAIRS',
+  '写真クイズ出題数':     'VISUAL_MAX_QUESTIONS',
+  '文字並べ替え出題数':   'WORD_ORDER_MAX_QUESTIONS',
 };
 
 // 値を特定の選択肢に限定する設定
@@ -34,7 +38,7 @@ const SETTINGS_ALLOWED_VALUES = {
 async function loadSheetSettings() {
   if (!CONFIG.SPREADSHEET_ID || !CONFIG.API_KEY) return;
 
-  const range = encodeURIComponent(SETTINGS_SHEET_NAME + '!A1:B100');
+  const range = encodeURIComponent((CONFIG.CONTROL_SHEET || '設定') + '!A1:B100');
   const url = 'https://sheets.googleapis.com/v4/spreadsheets/' +
     CONFIG.SPREADSHEET_ID + '/values/' + range + '?key=' + CONFIG.API_KEY;
 

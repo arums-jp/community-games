@@ -186,6 +186,32 @@
       </div>
     </a>
 
+    <!-- 写真・シルエットクイズ -->
+    <a href="visual-quiz/" class="game-card">
+      <div class="game-card-inner">
+        <div class="game-card-icon">📷</div>
+        <div class="game-card-body">
+          <span class="game-card-label">ミニゲーム</span>
+          <p class="game-card-title">写真で名前当てクイズ</p>
+          <p class="game-card-desc">写真やシルエットを見て正式な名前を選ぼう！</p>
+        </div>
+        <div class="game-card-arrow">›</div>
+      </div>
+    </a>
+
+    <!-- 文字並べ替え -->
+    <a href="word-order/" class="game-card">
+      <div class="game-card-inner">
+        <div class="game-card-icon">🔤</div>
+        <div class="game-card-body">
+          <span class="game-card-label">ミニゲーム</span>
+          <p class="game-card-title">文字並べ替えクイズ</p>
+          <p class="game-card-desc">文字カードを順番に選んで言葉を作ろう！</p>
+        </div>
+        <div class="game-card-arrow">›</div>
+      </div>
+    </a>
+
     <!-- 絵合わせ -->
     <a href="memory-game/" class="game-card">
       <div class="game-card-inner">
@@ -213,5 +239,41 @@
     </div>
 
   </div>
+  <script src="config.js"></script>
+  <script>
+    var allowedGames = ['quiz/', 'crossword/', 'visual-quiz/', 'word-order/', 'memory-game/'];
+
+    function redirectToActiveGame(gamePath) {
+      var normalizedPath = String(gamePath || '').trim().replace(/\/+$/, '') + '/';
+      if (allowedGames.indexOf(normalizedPath) !== -1) {
+        window.location.replace(normalizedPath);
+      }
+    }
+
+    function getActiveGameFromSheet() {
+      var range = encodeURIComponent((CONFIG.CONTROL_SHEET || '設定') + '!A2:B20');
+      var url = 'https://sheets.googleapis.com/v4/spreadsheets/' +
+        CONFIG.SPREADSHEET_ID + '/values/' + range + '?key=' + CONFIG.API_KEY;
+
+      return fetch(url).then(function(response) {
+        if (!response.ok) throw new Error('設定シートを読み込めませんでした');
+        return response.json();
+      }).then(function(data) {
+        var activeRow = (data.values || []).find(function(row) {
+          return String(row[0] || '').trim() === 'ACTIVE_GAME';
+        });
+        return activeRow ? String(activeRow[1] || '').trim() : '';
+      });
+    }
+
+    // 設定シートを優先し、取得できない場合はconfig.jsの値を使う。
+    if (CONFIG && CONFIG.SPREADSHEET_ID && CONFIG.API_KEY) {
+      getActiveGameFromSheet()
+        .then(function(gamePath) { redirectToActiveGame(gamePath || CONFIG.ACTIVE_GAME); })
+        .catch(function() { redirectToActiveGame(CONFIG.ACTIVE_GAME); });
+    } else if (CONFIG) {
+      redirectToActiveGame(CONFIG.ACTIVE_GAME);
+    }
+  </script>
 </body>
 </html>

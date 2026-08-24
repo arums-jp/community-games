@@ -29,6 +29,8 @@ settings.js             ← スプレッドシートの「設定」シートを�
 quiz/index.html         ← 4択クイズ
 crossword/index.html    ← クロスワードパズル
 memory-game/index.html  ← 絵合わせ（神経衰弱）
+visual-quiz/index.html   ← 写真・シルエットクイズ
+word-order/index.html    ← 文字並べ替えクイズ
 memory-game/images/cards.js ← 絵合わせのカードデータ
 ```
 
@@ -47,6 +49,8 @@ memory-game/images/cards.js ← 絵合わせのカードデータ
 | クイズ | `CONFIG.SHEET_NAME`（クイズ） | A:番号, B:問題文, C:正解, D-F:不正解3択, G:解説, H:カテゴリ |
 | クロスワード | `CONFIG.CROSSWORD_SHEET`（クロスワード） | A:横単語, B:縦単語, C:ヒント（`/`区切りで横・縦） |
 | 絵合わせ | `CONFIG.MEMORY_SHEET`（絵合わせ） | スプレッドシートから取得（または `cards.js` のフォールバック） |
+| 写真・シルエットクイズ | `CONFIG.VISUAL_SHEET`（写真クイズ） | A:番号, B:問題文, C:画像URL, D:正解, E-G:不正解3択, H:解説, I:出題形式（`写真` または `シルエット`） |
+| 文字並べ替え | `CONFIG.WORD_ORDER_SHEET`（文字並べ替え） | A:問題文, B:予備項目, C:正解文字列, D:解説 |
 | 設定 | `設定`（settings.js） | A:設定名, B:値 |
 
 クロスワードは横・縦の単語に共通文字があることが必須。共通文字がない行は自動スキップされる。
@@ -85,6 +89,11 @@ memory-game/images/cards.js ← 絵合わせのカードデータ
 | `クイズ出題数` | クイズの出題数 | 10 |
 | `クロスワード出題数` | クロスワードの出題数 | 10 |
 | `絵合わせペア数` | 絵合わせのペア数（**6 / 8 / 10 / 12 のみ**） | 8 |
+| `写真クイズ出題数` | 写真・シルエットクイズの出題数 | 10 |
+| `文字並べ替え出題数` | 文字並べ替えクイズの出題数 | 10 |
+
+このシートは [index.html](index.html) が月替わりゲームの切替に使う `ACTIVE_GAME` と
+同じシート（`CONFIG.CONTROL_SHEET`）。1枚のシートに両方の設定を並べて書く。
 
 絵合わせのグリッドは4列固定（CSS `.grid` の `repeat(4, 1fr)`）なので、カード枚数
 （ペア数×2）が4の倍数になる 6/8/10/12 だけを許可している。それ以外の値を入力しても
@@ -94,6 +103,12 @@ memory-game/images/cards.js ← 絵合わせのカードデータ
 値が空・未入力・「設定」シート自体が無い場合は [config.js](config.js) の既定値を使う。
 問題数が設定値より少ない場合は全問出題。設定名は [settings.js](settings.js) の
 `SETTINGS_KEY_MAP` に定義されているので、設定項目を増やすときはここに追記する。
+
+**写真・シルエットクイズの問題入力**: `写真クイズ` シートを作成し、1行目を見出しにしてA〜I列へ入力する。C列にはGoogle Driveなどの画像URLを設定し、I列を `写真` にすると通常表示、`シルエット` にすると黒いシルエット表示になる。D列の正解を含めてE〜G列に誤答を3つ入力する。QRコードで公開する月は `config.js` の `ACTIVE_GAME` を `visual-quiz/` に変更する。
+
+**文字並べ替えクイズの問題入力**: `文字並べ替え` シートを作成し、1行目を見出しにしてA〜D列へ入力する。A列に問題文、C列に正解文字列（例: `マツタケ`）、D列に解説を入力する。B列は予備項目として空欄でもよい。QRコードで公開する月は `config.js` の `ACTIVE_GAME` を `word-order/` に変更する。
+
+**月替わりゲームの指定**: `設定` シートを作成し、A列に `ACTIVE_GAME`、B列に `quiz`、`crossword`、`visual-quiz`、`word-order`、`memory-game` のいずれかを入力する（末尾の `/` は付けてもよい）。トップURLへアクセスすると設定シートの値が優先され、Google Sheets APIが利用できない場合は `config.js` の `ACTIVE_GAME` に戻る。`config.js` の `CONTROL_SHEET` で設定シート名を変更できる。
 
 ## サイト（HTMLファイル等）の更新・公開
 

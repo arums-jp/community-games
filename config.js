@@ -4,8 +4,11 @@
 // =============================================
 
 const CONFIG = {
-  // 今月QRコードから案内するゲーム（quiz/ または crossword/）
+  // 今月QRコードから案内するゲーム（quiz/、crossword/、visual-quiz/ など）
   ACTIVE_GAME: 'quiz/',
+
+  // 月替わり設定を管理するシート名。A列に設定名、B列に値を入力する
+  CONTROL_SHEET: '設定',
 
   // 景品企画の表示設定
   MONTH_LABEL: '2026年8月のチャレンジ',
@@ -30,4 +33,7 @@ const CONFIG = {
 
   // クロスワード: 問題データのシート名
   CROSSWORD_SHEET: 'クロスワード',
+
+  // 写真・シルエットクイズ: 問題データのシート名
+  VISUAL_SHEET: '写真クイズ',
 };

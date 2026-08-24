@@ -199,6 +199,19 @@
       </div>
     </a>
 
+    <!-- 文字並べ替え -->
+    <a href="word-order/" class="game-card">
+      <div class="game-card-inner">
+        <div class="game-card-icon">🔤</div>
+        <div class="game-card-body">
+          <span class="game-card-label">ミニゲーム</span>
+          <p class="game-card-title">文字並べ替えクイズ</p>
+          <p class="game-card-desc">文字カードを順番に選んで言葉を作ろう！</p>
+        </div>
+        <div class="game-card-arrow">›</div>
+      </div>
+    </a>
+
     <!-- 絵合わせ -->
     <a href="memory-game/" class="game-card">
       <div class="game-card-inner">
@@ -228,7 +241,7 @@
   </div>
   <script src="config.js"></script>
   <script>
-    var allowedGames = ['quiz/', 'crossword/', 'visual-quiz/', 'memory-game/'];
+    var allowedGames = ['quiz/', 'crossword/', 'visual-quiz/', 'word-order/', 'memory-game/'];
 
     function redirectToActiveGame(gamePath) {
       var normalizedPath = String(gamePath || '').trim().replace(/\/+$/, '') + '/';

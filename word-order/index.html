@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>文字並べ替えクイズ</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Meiryo', sans-serif; background: #fdf6ee; color: #4a3728; min-height: 100vh; display: flex; justify-content: center; padding: 16px; }
+    #app { width: 100%; max-width: 480px; min-height: calc(100vh - 32px); display: flex; flex-direction: column; }
+    .card { background: #fffaf4; border-radius: 20px; padding: 32px 24px; box-shadow: 0 4px 16px rgba(180, 120, 60, .15); width: 100%; display: flex; flex-direction: column; gap: 24px; }
+    .screen { display: none; }
+    .screen.active { display: flex; }
+    .center { justify-content: center; align-items: center; text-align: center; }
+    .btn { width: 100%; min-height: 60px; border: 0; border-radius: 16px; padding: 12px 16px; font: bold 21px/1.4 inherit; cursor: pointer; }
+    .btn:active, .letter-card:active { transform: scale(.98); opacity: .85; }
+    .btn-primary { background: #e07b39; color: #fff; box-shadow: 0 4px 10px rgba(224, 123, 57, .35); }
+    .btn-secondary { background: #f2d9bc; color: #4a3728; }
+    .title-icon { font-size: 56px; }
+    h1 { font-size: 30px; color: #c96a28; }
+    .subtitle { font-size: 18px; color: #8c6b4a; }
+    .info, .question-box, .result-box { width: 100%; padding: 20px; border-radius: 14px; background: #fdf0e0; }
+    .info-text, .result-message { font-size: 20px; line-height: 1.8; }
+    .info-text strong { color: #e07b39; font-size: 28px; }
+    .progress-label { color: #8c6b4a; font-size: 18px; text-align: right; }
+    .progress-bg { height: 10px; border-radius: 99px; overflow: hidden; background: #f2d9bc; }
+    .progress-fill { height: 100%; background: #e07b39; transition: width .3s; }
+    .question-text { font-size: 22px; line-height: 1.7; }
+    .answer-label, .letters-label { color: #8c6b4a; font-size: 17px; font-weight: bold; }
+    .answer-slots, .letter-cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .answer-slot { width: 52px; height: 58px; border: 3px solid #e07b39; border-radius: 10px; background: #fff; display: flex; justify-content: center; align-items: center; font-size: 28px; font-weight: bold; }
+    .answer-slot.filled { background: #fff3e0; }
+    .letter-card { width: 58px; height: 64px; border: 2px solid #e0c4a0; border-radius: 12px; background: #fff; color: #4a3728; font: bold 26px inherit; cursor: pointer; box-shadow: 0 2px 6px rgba(180, 120, 60, .12); }
+    .letter-card.used { opacity: .35; cursor: default; }
+    .action-row { display: flex; gap: 10px; }
+    .action-row .btn { font-size: 17px; min-height: 50px; }
+    .feedback { padding: 15px; border-radius: 14px; font-size: 20px; font-weight: bold; line-height: 1.6; text-align: center; }
+    .feedback.correct { background: #d4edda; color: #2d6a2d; }
+    .feedback.wrong { background: #f8d7da; color: #842029; }
+    .result-icon { font-size: 64px; }
+    .result-title { font-size: 29px; font-weight: bold; color: #c96a28; }
+    .result-score { font-size: 52px; font-weight: bold; color: #e07b39; }
+    .result-total { font-size: 25px; color: #8c6b4a; }
+    .achievement-panel { width: 100%; padding: 20px; border: 4px solid #4cae4c; border-radius: 16px; background: #f1faef; }
+    .achievement-title { color: #2d6a2d; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 12px; }
+    .achievement-text { color: #2d6a2d; font-size: 18px; line-height: 1.7; }
+    .achievement-date { font-weight: bold; font-size: 20px; }
+    [hidden] { display: none !important; }
+    .error-title { color: #c0392b; font-size: 22px; }
+    .error-message { width: 100%; padding: 16px; border-radius: 12px; background: #fdf0e0; font-size: 18px; line-height: 1.7; white-space: pre-wrap; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="screen-loading" class="screen card center active"><div class="title-icon">🔤</div><p class="subtitle">問題を読み込んでいます…</p></div>
+    <div id="screen-start" class="screen card center">
+      <div class="title-icon">🔤</div><h1>文字並べ替えクイズ</h1><p class="subtitle">文字カードを順番に選んで言葉を作ろう！</p>
+      <div class="info"><p class="info-text">全 <strong id="question-count">?</strong> 問です。<br>文字カードを順番にタップして、答えを完成させてください。</p></div>
+      <button class="btn btn-primary" id="start-btn">はじめる</button><button class="btn btn-secondary" onclick="goTop()">トップへもどる</button>
+    </div>
+    <div id="screen-question" class="screen card">
+      <p class="progress-label"><span id="current-num">1</span> 問目 ／ <span id="total-num">10</span> 問</p>
+      <div class="progress-bg"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="question-box"><p class="question-text" id="question-text"></p></div>
+      <p class="answer-label">あなたの答え</p><div class="answer-slots" id="answer-slots"></div>
+      <p class="letters-label">文字カードを順番にタップ</p><div class="letter-cards" id="letter-cards"></div>
+      <div class="feedback" id="feedback" hidden></div>
+      <div class="action-row"><button class="btn btn-secondary" id="undo-btn">1文字もどす</button><button class="btn btn-secondary" id="clear-btn">全部消す</button></div>
+      <button class="btn btn-secondary" onclick="goTop()">トップへもどる</button>
+    </div>
+    <div id="screen-result" class="screen card center">
+      <div class="result-icon" id="result-icon">🎉</div><p class="result-title" id="result-title">おつかれさまでした！</p>
+      <div class="result-box"><p class="result-score"><span id="correct-count">0</span><span class="result-total"> ／ <span id="result-total">0</span> 問正解</span></p><p class="result-message" id="result-message"></p></div>
+      <div class="achievement-panel" id="achievement-panel" hidden><p class="achievement-title">景品チャレンジ達成！</p><p class="achievement-text" id="achievement-month"></p><p class="achievement-text">達成日時：<span class="achievement-date" id="achievement-date"></span></p><p class="achievement-text" id="achievement-guidance"></p></div>
+      <button class="btn btn-primary" id="restart-btn">もう一度あそぶ</button><button class="btn btn-secondary" onclick="goTop()">トップへもどる</button>
+    </div>
+  </div>
+  <script src="../config.js"></script>
+  <script>
+    var allQuestions = [], gameQuestions = [], currentIndex = 0, correctCount = 0, selectedLetters = [], answerLocked = false;
+    function showScreen(id) { document.querySelectorAll('.screen').forEach(function(el) { el.classList.remove('active'); }); document.getElementById(id).classList.add('active'); }
+    function shuffleArray(arr) { for (var i = arr.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), temp = arr[i]; arr[i] = arr[j]; arr[j] = temp; } return arr; }
+    function escapeHtml(str) { return typeof str === 'string' ? str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : ''; }
+    function showError(title, detail) { document.getElementById('screen-loading').innerHTML = '<p class="error-title">⚠️ ' + escapeHtml(title) + '</p><div class="error-message">' + escapeHtml(detail) + '</div><button class="btn btn-secondary" onclick="location.reload()">再読み込み</button>'; showScreen('screen-loading'); }
+    function fetchQuestions() {
+      var range = encodeURIComponent((CONFIG.WORD_ORDER_SHEET || '文字並べ替え') + '!A2:D1000');
+      var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + CONFIG.SPREADSHEET_ID + '/values/' + range + '?key=' + CONFIG.API_KEY;
+      fetch(url).then(function(response) { return response.json().then(function(data) { if (!response.ok) throw new Error((data.error && data.error.message) || response.statusText); return data; }); }).then(function(data) {
+        (data.values || []).forEach(function(row) {
+          var answer = String(row[2] || '').trim();
+          if (!answer) return;
+          allQuestions.push({ question: String(row[0] || '').trim(), answer: answer, explanation: String(row[3] || '').trim(), letters: answer.split('') });
+        });
+        if (!allQuestions.length) throw new Error('問題データがありません。文字並べ替えシートの入力内容を確認してください。');
+        document.getElementById('question-count').textContent = Math.min(allQuestions.length, CONFIG.MAX_QUESTIONS || 10); showScreen('screen-start');
+      }).catch(function(error) { showError('データの読み込みに失敗しました。', error.message); });
+    }
+    function startGame() { currentIndex = 0; correctCount = 0; gameQuestions = shuffleArray(allQuestions.slice()).slice(0, CONFIG.MAX_QUESTIONS || 10); showQuestion(); }
+    function showQuestion() {
+      var question = gameQuestions[currentIndex]; answerLocked = false; selectedLetters = [];
+      document.getElementById('current-num').textContent = currentIndex + 1; document.getElementById('total-num').textContent = gameQuestions.length; document.getElementById('progress-fill').style.width = (currentIndex / gameQuestions.length) * 100 + '%'; document.getElementById('question-text').textContent = question.question || 'この言葉は何でしょう？';
+      var slots = document.getElementById('answer-slots'); slots.innerHTML = ''; question.letters.forEach(function() { var slot = document.createElement('div'); slot.className = 'answer-slot'; slots.appendChild(slot); });
+      var cards = document.getElementById('letter-cards'); cards.innerHTML = ''; shuffleArray(question.letters.map(function(letter, index) { return { letter: letter, index: index }; })).forEach(function(item) { var card = document.createElement('button'); card.className = 'letter-card'; card.textContent = item.letter; card.dataset.index = item.index; card.addEventListener('click', function() { selectLetter(card, item); }); cards.appendChild(card); });
+      document.getElementById('feedback').hidden = true; showScreen('screen-question');
+    }
+    function selectLetter(card, item) { if (answerLocked || card.classList.contains('used')) return; selectedLetters.push(item.letter); card.classList.add('used'); renderAnswer(); if (selectedLetters.length === gameQuestions[currentIndex].letters.length) checkAnswer(); }
+    function renderAnswer() { document.querySelectorAll('.answer-slot').forEach(function(slot, index) { slot.textContent = selectedLetters[index] || ''; slot.classList.toggle('filled', !!selectedLetters[index]); }); }
+    function undoLetter() { if (answerLocked || !selectedLetters.length) return; selectedLetters.pop(); var used = document.querySelectorAll('.letter-card.used'); if (used.length) used[used.length - 1].classList.remove('used'); renderAnswer(); }
+    function clearAnswer() { if (answerLocked) return; selectedLetters = []; document.querySelectorAll('.letter-card').forEach(function(card) { card.classList.remove('used'); }); renderAnswer(); }
+    function checkAnswer() { answerLocked = true; var question = gameQuestions[currentIndex], answer = selectedLetters.join(''), isCorrect = answer === question.answer; if (isCorrect) correctCount++; var feedback = document.getElementById('feedback'); feedback.hidden = false; feedback.className = 'feedback ' + (isCorrect ? 'correct' : 'wrong'); feedback.textContent = isCorrect ? '⭕ 正解！' : '❌ 残念、もう一度挑戦してみてください。'; if (isCorrect && question.explanation) feedback.textContent += ' ' + question.explanation; setTimeout(function() { currentIndex++; if (currentIndex >= gameQuestions.length) showResult(); else showQuestion(); }, 1200); }
+    function showResult() { var total = gameQuestions.length, ratio = total ? correctCount / total : 0; document.getElementById('correct-count').textContent = correctCount; document.getElementById('result-total').textContent = total; document.getElementById('result-icon').textContent = ratio === 1 ? '🏆' : '🎉'; document.getElementById('result-title').textContent = ratio === 1 ? '全問正解！' : 'おつかれさまでした！'; document.getElementById('result-message').textContent = ratio === 1 ? 'すばらしいです！' : 'もう一度チャレンジしてみてください。'; var minimum = Number(CONFIG.ACHIEVEMENT_MIN_SCORE), achieved = Number.isFinite(minimum) && ratio >= minimum; document.getElementById('achievement-panel').hidden = !achieved; if (achieved) { document.getElementById('achievement-month').textContent = CONFIG.MONTH_LABEL || '今月のチャレンジ'; document.getElementById('achievement-date').textContent = new Intl.DateTimeFormat('ja-JP', { dateStyle: 'full', timeStyle: 'short' }).format(new Date()); document.getElementById('achievement-guidance').textContent = CONFIG.PRIZE_GUIDANCE || 'この画面を職員にお見せください。'; } showScreen('screen-result'); }
+    function goTop() { window.location.href = '../'; }
+    document.getElementById('start-btn').addEventListener('click', startGame); document.getElementById('restart-btn').addEventListener('click', startGame); document.getElementById('undo-btn').addEventListener('click', undoLetter); document.getElementById('clear-btn').addEventListener('click', clearAnswer); fetchQuestions();
+  </script>
+</body>
+</html>

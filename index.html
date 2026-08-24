@@ -213,5 +213,12 @@
     </div>
 
   </div>
+  <script src="config.js"></script>
+  <script>
+    // QRコード用の入口は、設定した今月のゲームへ案内する。
+    if (CONFIG && CONFIG.ACTIVE_GAME) {
+      window.location.replace(CONFIG.ACTIVE_GAME);
+    }
+  </script>
 </body>
 </html>

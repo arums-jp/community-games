@@ -4,6 +4,15 @@
 // =============================================
 
 const CONFIG = {
+  // 今月QRコードから案内するゲーム（quiz/ または crossword/）
+  ACTIVE_GAME: 'quiz/',
+
+  // 景品企画の表示設定
+  MONTH_LABEL: '2026年8月のチャレンジ',
+  CHALLENGE_TITLE: '地域クイズ 景品チャレンジ',
+  ACHIEVEMENT_MIN_SCORE: 1.0,
+  PRIZE_GUIDANCE: 'この画面をコミュニティセンターの職員にお見せください。',
+
   // Google スプレッドシートのID（URLの /d/ と /edit の間の文字列）
   SPREADSHEET_ID: '1ywGFr5-XRkMKBUywETaW-LcaNcLoUYUwc1FOyGHDAp4',
 

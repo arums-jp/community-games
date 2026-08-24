@@ -555,6 +555,7 @@
   </div>
 
   <script src="../config.js"></script>
+  <script src="../settings.js"></script>
   <script>
     // =============================================
     // カタカナ行データ
@@ -722,7 +723,7 @@
 
         // シャッフルして最大問題数に絞る
         puzzles = shuffleArray(puzzles);
-        var max = (CONFIG.MAX_QUESTIONS && CONFIG.MAX_QUESTIONS > 0) ? CONFIG.MAX_QUESTIONS : 10;
+        var max = (CONFIG.CROSSWORD_MAX_QUESTIONS && CONFIG.CROSSWORD_MAX_QUESTIONS > 0) ? CONFIG.CROSSWORD_MAX_QUESTIONS : 10;
         if (puzzles.length > max) puzzles = puzzles.slice(0, max);
 
         showScreen('screen-start');
@@ -1097,7 +1098,7 @@
     // =============================================
     // 起動
     // =============================================
-    fetchData();
+    loadSheetSettings().then(fetchData);
   </script>
 </body>
 </html>

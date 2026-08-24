@@ -363,6 +363,7 @@
   </div><!-- /#app -->
 
   <script src="../config.js"></script>
+  <script src="../settings.js"></script>
 
   <script>
     // =============================================
@@ -457,10 +458,22 @@
           CARDS.push({ id: i + 1, label: label, image: imageUrl, emoji: emoji || '🃏' });
         });
 
-        if (CARDS.length < 2) {
-          showError('カードデータが不足しています。', 'スプレッドシートに2行以上のデータを入力してください。');
+        // シャッフルして設定のペア数に絞る
+        // グリッドは4列固定なので、ペア数は 6/8/10/12（=12/16/20/24枚）のみ。
+        // カードデータが足りない場合は、収まる範囲で一番大きい選択肢まで落とす。
+        var PAIR_CHOICES = [6, 8, 10, 12];
+        var pairLimit = CONFIG.MEMORY_PAIRS || 8;
+        while (pairLimit > CARDS.length && pairLimit > PAIR_CHOICES[0]) {
+          pairLimit = PAIR_CHOICES[PAIR_CHOICES.indexOf(pairLimit) - 1];
+        }
+
+        if (CARDS.length < pairLimit) {
+          showError('カードデータが不足しています。',
+            'スプレッドシートに' + pairLimit + '行以上のデータを入力してください。');
           return;
         }
+
+        CARDS = shuffleArray(CARDS.slice()).slice(0, pairLimit);
 
         // スタート画面を完成形に書き換え
         document.getElementById('screen-start').innerHTML =
@@ -657,7 +670,7 @@
     // =============================================
     // 起動
     // =============================================
-    fetchCards();
+    loadSheetSettings().then(fetchCards);
   </script>
 </body>
 </html>

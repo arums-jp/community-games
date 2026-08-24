@@ -510,6 +510,7 @@
 
   <!-- 設定ファイルを先に読み込む -->
   <script src="../config.js"></script>
+  <script src="../settings.js"></script>
 
   <script>
     // =============================================
@@ -879,7 +880,7 @@
     // =============================================
     // 起動
     // =============================================
-    fetchQuestions();
+    loadSheetSettings().then(fetchQuestions);
 
   </script>
 </body>
